@@ -13,6 +13,9 @@
 
 (def ^:const threads 8)
 
+(def printer
+ (agent nil))
+
 (defnp initialize-flights [initial-flights]
   "Set `flights` agent state to the `initial-flights`."
   (let [grouped-flights (group-by :to initial-flights)]
@@ -29,9 +32,8 @@
               (map (fn [[p a t]] (clojure.pprint/cl-format nil "$~3d: ~3d ~3d" p a t)))
               (clojure.string/join ", ")))]
     (doseq [{:keys [id from to pricing]} flights]
-      (locking *out*
-        (println (clojure.pprint/cl-format nil "Flight ~3d from ~a to ~a: ~a"
-          id from to (pricing->str pricing)))))))
+      (println (clojure.pprint/cl-format nil "Flight ~3d from ~a to ~a: ~a"
+      id from to (pricing->str pricing))))))
 
 (defnp update-pricing [flight factor]
   "Updated pricing of `flight` with `factor`."
@@ -41,8 +43,9 @@
 
 (defnp start-sale []
   "Sale: all flights -20%."
-  ;(locking *out*
-    (println "Start sale!");)
+  (send-off printer
+           (fn [state]
+             (println "Start sale!")))
   (doseq [agent (vals flights)]
     (send agent
       (fn [fs]
@@ -50,8 +53,9 @@
 
 (defnp end-sale []
   "End sale: all flights +25% (inverse of -20%)."
-  ;(locking *out*
-    (println "End sale!");)
+  (send-off printer
+           (fn [state]
+             (println "End sale!")))
   (doseq [agent (vals flights)]
     (send agent
       (fn [fs]
@@ -110,14 +114,16 @@
   (fn [flights]
     (if-let [flight (find-flight flights customer)]
       (let [{updated-flight :flight price :price} (book flight customer)]
-        (locking *out*
-            (println "Customer" (:id customer) "booked" (:seats customer)
-            "seats on flight" (:id updated-flight) "at $" price " (< budget of $"
-            (:budget customer) ")."))
+        (send-off printer
+                 (fn [state]
+                   (println "Customer" (:id customer) "booked" (:seats customer)
+                   "seats on flight" (:id updated-flight) "at $" price
+                   " (< budget of $" (:budget customer) ").")))
         (clojure.walk/postwalk #(if (= (:id %) (:id updated-flight)) updated-flight %) flights))
       (do
-        (locking *out*
-          (println "Customer" (:id customer) "did not find a flight."))
+        (send-off printer
+                 (fn [state]
+                   (println "Customer" (:id customer) "did not find a flight.")))
         flights))))
 
 (defnp process-customers [customers]
