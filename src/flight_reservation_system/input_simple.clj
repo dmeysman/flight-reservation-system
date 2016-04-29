@@ -43,6 +43,5 @@
    {:id 12 :from "BRU" :to "ATL" :seats 3 :budget 850}
    {:id 13 :from "BRU" :to "ATL" :seats 4 :budget 200}])
 
-(def NUMBER_OF_CUSTOMERS 14)
 (def TIME_BETWEEN_SALES 5) ; milliseconds
 (def TIME_OF_SALES 5)

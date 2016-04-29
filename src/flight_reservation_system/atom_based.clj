@@ -106,7 +106,7 @@
 (def finished-processing
   "Set to true once all customers have been processed, so that sales process
   can end."
-  (atom 0))
+  (atom false))
 
 (defnp process-customer [flights customer]
   (swap! flights
@@ -144,7 +144,7 @@
     (start-sale)
     (Thread/sleep input/TIME_OF_SALES)
     (end-sale)
-    (if (< @finished-processing input/NUMBER_OF_CUSTOMERS)
+    (if (not @finished-processing)
       (recur))))
 
 (defnp main []
