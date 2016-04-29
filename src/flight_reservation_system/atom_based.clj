@@ -125,15 +125,16 @@
   ;           (println "Customer" (:id customer) "did not find a flight.")))
           flights-state)))))
 
+(defnp queue-customers-by-key [customers-by-key]
+  (let [key (first customers-by-key)
+        customers (first (rest customers-by-key))]
+    (doseq [customer customers]
+      (process-customer (flights key) customer))))
+
 (defnp process-customers [customers]
-  "Process `customers` in parallel"
-  (let [chunk-size (/ input/NUMBER_OF_CUSTOMERS threads)]
-    (->> customers
-      (partition-all chunk-size)
-      (pmap (fn [chunk]
-              (dorun (map #(process-customer (flights (:to %)) %)
-                    chunk))))
-      dorun)))
+  (let [queues (doall (map #(future (queue-customers-by-key %)) (group-by :to customers)))]
+    (dorun (map deref queues))
+    (reset! finished-processing true)))
 
 (defnp sales-process []
   "The sales process starts and ends sales periods, until `finished-processing`
@@ -147,10 +148,11 @@
       (recur))))
 
 (defnp main []
-  (let [sales (future (sales-process))]
-    (initialize-flights input/flights)
+  (initialize-flights input/flights)
+  (let [f1 (future (sales-process))]
     (process-customers input/customers)
-    @sales
-    (println "Flights:")
-    (doseq [atom (vals flights)]
-      (print-flights @atom))))
+    @f1
+    (shutdown-agents))
+  (println "Flights:")
+  (doseq [partial-flights (vals flights)]
+    (print-flights @partial-flights)))
