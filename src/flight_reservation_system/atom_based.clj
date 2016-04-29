@@ -11,7 +11,8 @@
             ;[flight-reservation-system.input-simple :as input]))
             [flight-reservation-system.input-uniform :as input]))
 
-(def ^:const threads 8)
+(def printer
+ (agent nil))
 
 (defnp initialize-flights [initial-flights]
   "Set `flights` agent state to the `initial-flights`."
@@ -29,9 +30,8 @@
               (map (fn [[p a t]] (clojure.pprint/cl-format nil "$~3d: ~3d ~3d" p a t)))
               (clojure.string/join ", ")))]
     (doseq [{:keys [id from to pricing]} flights]
-      (locking *out*
         (println (clojure.pprint/cl-format nil "Flight ~3d from ~a to ~a: ~a"
-          id from to (pricing->str pricing)))))))
+          id from to (pricing->str pricing))))))
 
 (defnp update-pricing [flight factor]
   "Updated pricing of `flight` with `factor`."
@@ -41,19 +41,21 @@
 
 (defnp start-sale []
   "Sale: all flights -20%."
-  (locking *out*
-    (println "Start sale!"))
-  (doseq [agent (vals flights)]
-    (swap! agent
+  ;(send-off printer
+  ;        (fn [state]
+  ;          (println "Start sale!")))
+  (doseq [atom (vals flights)]
+    (swap! atom
       (fn [fs]
         (map (fn [f] (update-pricing f 0.80)) fs)))))
 
 (defnp end-sale []
   "End sale: all flights +25% (inverse of -20%)."
-  (locking *out*
-    (println "End sale!"))
-  (doseq [agent (vals flights)]
-    (swap! agent
+  ;(send-off printer
+  ;        (fn [state]
+  ;          (println "End sale!")))
+  (doseq [atom (vals flights)]
+    (swap! atom
       (fn [fs]
         (map (fn [f] (update-pricing f 1.25)) fs)))))
 
@@ -111,16 +113,16 @@
     (fn [flights-state]
       (if-let [flight (find-flight flights-state customer)]
         (let [{updated-flight :flight price :price} (book flight customer)]
-          ;(locking *out*
-              (println "Customer" (:id customer) "booked" (:seats customer)
-              "seats on flight" (:id updated-flight) "at $" price " (< budget of $"
-              (:budget customer) ").");)
-          (swap! finished-processing inc)
+  ;        (send-off printer
+  ;         (fn [state]
+  ;           (println "Customer" (:id customer) "booked" (:seats customer)
+  ;           "seats on flight" (:id updated-flight) "at $" price " (< budget of $"
+  ;           (:budget customer) ").")))
           (clojure.walk/postwalk #(if (= (:id %) (:id updated-flight)) updated-flight %) flights-state))
         (do
-          ;(locking *out*
-            (println "Customer" (:id customer) "did not find a flight.");)
-          (swap! finished-processing inc)
+  ;        (send-off printer
+  ;         (fn [state]
+  ;           (println "Customer" (:id customer) "did not find a flight.")))
           flights-state)))))
 
 (defnp process-customers [customers]
