@@ -1,4 +1,4 @@
-(ns flight-reservation-system.input-random)
+(ns flight-reservation-system.input-uniform)
 
 (def flights
   [{:id 0
@@ -8,13 +8,13 @@
               [200  5000 0]
               [300  5000 0]]}
    {:id 1
-    :from "BRU" :to "ATL"
+    :from "BRU" :to "BVA"
     :pricing [[100  5000 0]
               [200 15000 0]
               [320  2000 0]
               [240  3000 0]]}
    {:id 2
-    :from "BRU" :to "TXL"
+    :from "BRU" :to "SXF"
     :pricing [[250 10000 0]
               [300  5000 0]]}
    {:id 3
@@ -60,14 +60,13 @@
               [300  5000 0]]}])
 
 (def customers
-  (for [id (range 100000)
-        :let [{from :from to :to} (rand-nth flights)]]
+  (for [id (range 11000)
+        :let [{from :from to :to} (nth flights (mod id 12))]]
     {:id     id
      :from   from
      :to     to
-     :seats  (+ (rand-int 4) 1)        ; 1-4
+     :seats  1;(+ (rand-int 4) 1)        ; 1-4
      :budget (+ (rand-int 600) 200)})) ; 200-799
 
-(def NUMBER_OF_CUSTOMERS 100000)
-(def TIME_BETWEEN_SALES 250) ; milliseconds
-(def TIME_OF_SALES 250)
+(def TIME_BETWEEN_SALES 25) ; milliseconds
+(def TIME_OF_SALES 25)

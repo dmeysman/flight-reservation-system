@@ -9,7 +9,7 @@
             [taoensso.timbre.profiling :as profiling
               :refer (pspy pspy* profile defnp p p*)]
             ;[flight-reservation-system.input-simple :as input]))
-            [flight-reservation-system.input-random :as input]))
+            [flight-reservation-system.input-uniform :as input]))
 
 (def ^:const threads 8)
 
